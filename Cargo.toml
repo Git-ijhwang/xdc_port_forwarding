@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "xdp_port_forwarding",
     "xdp_port_forwarding-common",
-    "xdp_port_forwarding-ebpf",
+    "xdp_port_forwarding-ebpf", "xtask",
 ]
 default-members = ["xdp_port_forwarding", "xdp_port_forwarding-common"]
 

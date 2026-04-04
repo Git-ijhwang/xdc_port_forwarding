@@ -8,6 +8,7 @@ xdp_port_forwarding-common = { path = "../xdp_port_forwarding-common" }
 
 aya-ebpf = { workspace = true }
 aya-log-ebpf = { workspace = true }
+network-types = "0.1.0"
 
 [build-dependencies]
 which = { workspace = true }
