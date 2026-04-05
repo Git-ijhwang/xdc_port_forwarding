@@ -1,5 +1,4 @@
 #![no_std]
-use aya_tool::pod;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default)]

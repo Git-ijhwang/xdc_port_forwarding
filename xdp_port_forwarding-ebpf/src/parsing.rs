@@ -1,5 +1,5 @@
-use aya_ebpf::binding::{ethhdr, iphdr, udphdr, tcphdr};
-use network_types::{eth::EtherType, ip::IpHdr};
+use network_types::{eth::{EthHdr, EtherType}, ip::{Ipv4Hdr, IpProto}, tcp::TcpHdr, udp::UdpHdr};
+use core::mem;
 
 pub enum L4Protocol {
     Tcp, Udp
@@ -21,7 +21,7 @@ pub unsafe fn ptr_at<T>(ctx: &aya_ebpf::programs::XdpContext, offset: usize)
 
 
 pub struct PacketContext {
-    pub ip_hdr: *const iphdr,
+    pub ip_hdr: *const Ipv4Hdr,
     pub proto: L4Protocol,
     pub dport: u16,
     pub l4_hdr_start: usize,
@@ -30,37 +30,39 @@ pub struct PacketContext {
 #[inline(always)]
 pub unsafe fn verify_headers(ctx: &aya_ebpf::programs::XdpContext)
 -> Result<PacketContext, ()> {
-    let eth = ptr_at::<ethhdr>(ctx, 0)?;
-    if u16::from_be((*eth).h_proto) != EtherType::Ipv4 as u16 {
+    let eth = ptr_at::<EthHdr>(ctx, 0)?;
+    if u16::from_be((*eth).ether_type) != EtherType::Ipv4 as u16 {
         return Err(());
     }
 
-    let ip = ptr_at::<iphdr>(ctx, mem::size_of::<ethhdr>())?;
+    let ip = ptr_at::<Ipv4Hdr>(ctx, mem::size_of::<EthHdr>())?;
+    // let ip_len = mem::size_of::<Ipv4Hdr>();
     let ip_len = ((*ip).ihl() * 4) as usize;
-    let l4_offset = mem::size_of::<ethhdr>() + ip_len as usize;
+    let l4_offset = mem::size_of::<EthHdr>() + ip_len as usize;
 
-    match (*ip).protocol {
-        6 => {
-            let tcp = ptr_at::<tcphdr>(ctx, l4_offset);
+    match (*ip).proto {
+        IpProto::Tcp  => {
+            let tcp = ptr_at::<TcpHdr>(ctx, l4_offset)?;
             return Ok( PacketContext {
                 ip_hdr: ip,
                 proto: L4Protocol::Tcp,
-                dport: u16::from(*tcp).dest,
+                dport: u16::from_be_bytes(unsafe {(*tcp).dest }),
                 l4_hdr_start: l4_offset,
             });
         },
-        17 => {
-            let udp = ptr_at::<udphdr>(ctx, l4_offset);
+
+        IpProto::Udp => {
+            let udp = ptr_at::<UdpHdr>(ctx, l4_offset)?;
 
             return Ok( PacketContext {
                 ip_hdr: ip,
                 proto: L4Protocol::Udp,
-                dport: u16::from(*udp).dest,
+                dport: u16::from_be_bytes((*udp).dst),
                 l4_hdr_start: l4_offset,
             })
         }
         _ => return Err(()),
     }
 
-    Ok (context)
+    // Ok (context)
 }

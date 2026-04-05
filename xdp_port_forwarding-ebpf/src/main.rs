@@ -37,7 +37,7 @@ pub fn xdp_port_forwarding(ctx: XdpContext) -> u32 {
 #[inline(always)]
 fn try_xdp_port_forwarding(ctx: XdpContext) -> Result<u32, ()> {
 
-    let ifindex = ctx.ingress_ifindex();
+    let ifindex = unsafe { (*ctx.ctx).ingress_ifindex};
     let len = (ctx.data_end() - ctx.data()) as u64;
 
     // Interface stats update
@@ -56,7 +56,7 @@ fn try_xdp_port_forwarding(ctx: XdpContext) -> Result<u32, ()> {
             (*rule_ptr).packets += 1;
             (*rule_ptr).bytes += len;
 
-            match packet::proto {
+            match packet.proto {
                 L4Protocol::Tcp => {
                 },
                 L4Protocol::Udp => {
