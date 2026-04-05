@@ -11,7 +11,8 @@ aya-log-ebpf = { workspace = true }
 network-types = "0.1.0"
 
 [build-dependencies]
-which = { workspace = true }
+# which = { workspace = true }
+which = "8.0.2"
 
 [[bin]]
 name = "xdp_port_forwarding"
